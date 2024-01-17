@@ -1,0 +1,31 @@
+# Ustawienie domyślnej polityki na DROP dla wszystkich rodzajów ruchu
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT DROP
+
+# Pozwolenie na istniejące połączenia oraz te z nimi związane
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Blokowanie dostępu do określonych stron WWW dla pracowników (z wyjątkiem szefów)
+iptables -A OUTPUT -p tcp ! -s 192.168.10.100/32 ! -s 192.168.10.101/32 --dport 80 -d www.9gag.com -j REJECT
+iptables -A OUTPUT -p tcp ! -s 192.168.10.100/32 ! -s 192.168.10.101/32 --dport 80 -d www.onet.pl -j REJECT
+iptables -A OUTPUT -p tcp ! -s 192.168.10.100/32 ! -s 192.168.10.101/32 --dport 80 -d www.kwejk.pl -j REJECT
+iptables -A OUTPUT -p tcp ! -s 192.168.10.100/32 ! -s 192.168.10.101/32 --dport 80 -d www.wykop.pl -j REJECT
+
+# Umożliwienie korzystania z komunikatora (przykład: port 1234)
+iptables -A OUTPUT -p tcp --dport 1234 -j ACCEPT
+
+# SSH: Programiści łączący się z zewnętrznymi serwerami
+iptables -A OUTPUT -p tcp -s 192.168.10.50/32 --dport 22 -j ACCEPT
+
+# SSH: Szef grupy programistów łączący się z domu
+iptables -A INPUT -p tcp -s 1.2.3.4 --dport 22 -j ACCEPT
+
+# Logowanie i blokowanie prób pingowania
+iptables -A INPUT -p icmp --icmp-type echo-request -j LOG
+iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+
+# Ustawienie wartości TTL dla pakietów wychodzących
+iptables -t mangle -A POSTROUTING -o eth0 -j TTL --ttl-set 64
+192.168.10.100
